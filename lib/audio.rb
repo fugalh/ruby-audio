@@ -2,17 +2,32 @@ require 'narray'
 # TODO: lots of testing, libsndfile, libsamplerate, portaudio
 module Audio
   
-  # A Sound consists of one or more Channel objects of the same type and
-  # length. It provides an interface for working on Channels together. For
-  # monophonic work you probably want to deal with a Channel directly.
+  # Construct with one of:
+  #   Sound.new(:sfloat,len,channels=1)
+  #   Sound.byte(len,channels=1)
+  #   Sound.sint(len,channels=1)   # short int
+  #   Sound.int(len,channels=1)
+  #   Sound.sfloat(len,channels=1) # single-precision float
+  #   Sound.float(len,channels=1)  # double-precision float
+  #
+  # See also the NArray documentation.
+  #
+  # Data is stored interleaved in narray, as an NArray (obviously). Get and set
+  # frames with [] and []=, get the raw data via narray. Get only one channel
+  # (as a new NArray) with channel.
   class Sound
-    # An array of channels
+    # The actual data. Channels are interleaved.
+    attr_reader :narray
+    # number of channels
     attr_reader :channels
 
-    # type:: one of [:byte,:sint,:int,:sfloat,:float].  See Channel.  
-    #        In particular, notice that :float means double precision float.
-    def initialize(len,num_channels=1,type=:sfloat)
-      raise ArgumentError, "Too few channels" unless num_channels > 0
+    # type:: one of [:byte,:sint,:int,:sfloat,:float].  See NArray
+    #        documentation.  In particular, notice that :float means double
+    #        precision float.
+    # len:: length in frames
+    # channels:: Number of channels
+    def initialize(type,len,channels=1)
+      raise ArgumentError, "Too few channels" unless channels > 0
 
       typecode = case type.to_sym
       when :byte,  :char   : 1
@@ -24,100 +39,101 @@ module Audio
 	raise ArgumentError, "Invalid type"
       end
 
-      @channels = Array.new(num_channels) do
-	Channel.new(typecode,len)
-      end.freeze
+      @channels = channels
+      @narray = NArray.new(typecode, @channels * len)
+      @mask = NArray.byte(@narray.size).indgen
+      @mask %= @channels
     end
 
-    # Number of samples in each channel.
+    # The number of frames
     def size
-      @channels[0].size
+      @narray.size / @channels
     end
     alias_method :length, :size
 
-    # One of :byte, :sint, :int, :sfloat, :float. (See Channel)
+    # Returns a new NArray with the data from channel i
+    def channel(i)
+      unless (0...@channels).include? i
+	raise IndexError, "Channel index out of range" 
+      end
+      @narray[@mask.eq(i)]
+    end
+
+    # One of [:byte, :sint, :int, :sfloat, :float].
     def type
-      @channels[0].type
+      [nil,:byte,:sint,:int,:sfloat,:float][@narray.typecode]
     end
 
     # A frame, i.e. an array containing the samples at position i from each
     # channel. For a two-channel sound:
     #   sound[i] #=> [0.42, 0.12]
     def [](i)
-      @channels.map {|c| c[i]}
+      unless (0...size).include? i
+	raise IndexError, "Index out of range"
+      end
+      j = 2*i
+      @narray[j..j+@channels-1]
     end
     alias_method :frame, :[]
 
     # For a two-channel sound: 
     # 	sound[i] = [0.2, 0.24]
     # 	sound[i] = 0.42 #=> sound[i] = [0.42, 0.42]
-    def []=(i,values)
-      if Numeric === values
-	values = Array.new(@channels.size,values)
+    def []=(i,val)
+      if Numeric === val
+	val = Array.new(@channels,val)
       end
-      unless Array === values and values.size == @channels.size
-	raise ArgumentError, 'values' 
-      end
-      @channels.each_with_index do |c,j|
-	c[i] = values[j]
-      end
-      self[i]
+      raise ArgumentError, "Value must be Array or Numeric" unless Array === val
+      raise ArgumentError, "Expected Array of size #{@channels}" unless val.size == @channels
+
+      j = 2*i
+      @narray[j..j+@channels-1] = val
     end
     alias_method :frame=, :[]=
 
-    include Enumerable
     def each_frame
       self.size.times do |i|
 	yield self[i]
       end
     end
     alias_method :each, :each_frame
+    include Enumerable
 
-    # Resize the sound, padding with 0s or truncating. *Warning*: this replaces
-    # the channels, it does not modify them. So any outside references you may
-    # have to the channels are orphans.
     def resize!(newlen)
-      oldlen = self.size
+      oldlen = size
       if newlen > oldlen
-	@channels = @channels.map do |c| 
-	  c2 = Channel.new(c.typecode,newlen)
-	  c2[0...oldlen] = c
-	  c2
-	end.freeze
+	old = @narray
+	@narray = NArray.new(old.typecode,newlen*@channels)
+	@narray[0...oldlen*@channels] = old
       else
-	@channels = @channels.map do |c|
-	  c[0...newlen]
-	end.freeze
+	@narray = @narray[0...newlen*@channels]
       end
-      self.size
+      size
     end
-  end
 
-  # Adapted from the NArray documentation:
-  #   Channel.new(typecode, size)	create new Channel. initialize with 0.
-  #
-  #   Channel.byte(size)		1 byte unsigned integer
-  #   Channel.sint(size)		2 byte signed integer
-  #   Channel.int(size)			4 byte signed integer
-  #   Channel.sfloat(size)		single precision float
-  #   Channel.float(size)		double precision float 
-  #
-  # Channel is a light subclass of NArray. Create one as above. Remember that
-  # not everything you can do with NArray makes sense for a Channel, e.g.  more
-  # than one dimension probably doesn't make much sense. However, you're free
-  # to do whatever evil you want, just don't come crying to me...
-  class Channel < NArray
-    # One of [:byte,:sint,:int,:sfloat,:float].
-    def type
-      [nil,:byte,:sint,:int,:sfloat,:float][self.typecode]
+    def self.byte(len, channels=1)
+      self.new(:byte,len,channels)
+    end
+    def self.sint(len, channels=1)
+      self.new(:sint,len,channels)
+    end
+    def self.int(len, channels=1)
+      self.new(:int,len,channels)
+    end
+    def self.sfloat(len, channels=1)
+      self.new(:sfloat,len,channels)
+    end
+    def self.float(len, channels=1)
+      self.new(:float,len,channels)
     end
 
     # alias class methods
-    class << Channel
+    class << self
       alias_method :char,   :byte
       alias_method :short,  :sint
       alias_method :long,   :int
       alias_method :double, :float
     end
   end
+
 end
