@@ -76,7 +76,7 @@ module Audio
     # Resize the sound, padding with 0s or truncating. *Warning*: this replaces
     # the channels, it does not modify them. So any outside references you may
     # have to the channels are orphans.
-    def resize(newlen)
+    def resize!(newlen)
       oldlen = self.size
       if newlen > oldlen
 	@channels = @channels.map do |c| 
@@ -109,7 +109,7 @@ module Audio
   class Channel < NArray
     # One of [:byte,:sint,:int,:sfloat,:float].
     def type
-      [:byte,:sint,:int,:sfloat,:float][self.typecode]
+      [nil,:byte,:sint,:int,:sfloat,:float][self.typecode]
     end
 
     # alias class methods
