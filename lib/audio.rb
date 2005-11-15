@@ -2,129 +2,84 @@ require 'narray'
 # TODO: lots of testing, libsndfile, libsamplerate, portaudio
 module Audio
   
-  # Construct with one of:
-  #   Sound.new(:sfloat,len,channels=1)
-  #   Sound.byte(len,channels=1)
-  #   Sound.sint(len,channels=1)   # short int
-  #   Sound.int(len,channels=1)
-  #   Sound.sfloat(len,channels=1) # single-precision float
-  #   Sound.float(len,channels=1)  # double-precision float
+  # A Sound is a NArray with some audio convenience methods. It should always
+  # have the shape (n,m) where n is the number of frames and m is the number of
+  # channels. (Even when m=1)
   #
-  # See also the NArray documentation.
   #
-  # Data is stored interleaved in narray, as an NArray (obviously). Get and set
-  # frames with [] and []=, get the raw data via narray. Get only one channel
-  # (as a new NArray) with channel.
-  class Sound
-    # The actual data. Channels are interleaved.
-    attr_reader :narray
-    # number of channels
-    attr_reader :channels
-
-    # type:: one of [:byte,:sint,:int,:sfloat,:float].  See NArray
-    #        documentation.  In particular, notice that :float means double
-    #        precision float.
-    # len:: length in frames
-    # channels:: Number of channels
-    def initialize(type,len,channels=1)
-      raise ArgumentError, "Too few channels" unless channels > 0
-
-      typecode = case type.to_sym
-      when :byte,  :char   : 1
-      when :sint,  :short  : 2
-      when :int,   :long   : 3
-      when :sfloat         : 4
-      when :float, :double : 5
-      else
-	raise ArgumentError, "Invalid type"
-      end
-
-      @channels = channels
-      @narray = NArray.new(typecode, @channels * len)
-      @mask = NArray.byte(@narray.size).indgen
-      @mask %= @channels
-    end
-
+  class Sound < NArray
     # The number of frames
-    def size
-      @narray.size / @channels
+    def frames
+      self.shape[0]
     end
-    alias_method :length, :size
 
-    # Returns a new NArray with the data from channel i
+    # The number of channels
+    def channels
+      self.shape[1]
+    end
+
+    # Returns a new Sound with the data from channel i
     def channel(i)
-      unless (0...@channels).include? i
-	raise IndexError, "Channel index out of range" 
-      end
-      @narray[@mask.eq(i)]
-    end
-
-    # One of [:byte, :sint, :int, :sfloat, :float].
-    def type
-      [nil,:byte,:sint,:int,:sfloat,:float][@narray.typecode]
+      self[true,i]
     end
 
     # A frame, i.e. an array containing the samples at position i from each
     # channel. For a two-channel sound:
-    #   sound[i] #=> [0.42, 0.12]
-    def [](i)
-      unless (0...size).include? i
+    #   sound.frame(i) #=> [0.42, 0.12]
+    #
+    # You may prefer to do this the NArray way: s[i,false]
+    def frame(i)
+      unless (0...frames).include? i
 	raise IndexError, "Index out of range"
       end
-      j = 2*i
-      @narray[j..j+@channels-1]
+      self[i,false]
     end
-    alias_method :frame, :[]
 
-    # For a two-channel sound: 
-    # 	sound[i] = [0.2, 0.24]
-    # 	sound[i] = 0.42 #=> sound[i] = [0.42, 0.42]
-    def []=(i,val)
-      if Numeric === val
-	val = Array.new(@channels,val)
-      end
-      raise ArgumentError, "Value must be Array or Numeric" unless Array === val
-      raise ArgumentError, "Expected Array of size #{@channels}" unless val.size == @channels
-
-      j = 2*i
-      @narray[j..j+@channels-1] = val
+    # For a two-channel sound:
+    #   s.set_frame(i,[0.42,0.24])
+    #   s.set_frame(i,0.42) #=> s.set_frame(i,[0.42,0.42])
+    #
+    # You may prefer to do this the NArray way: s[i,false] = val
+    def set_frame(i,val)
+      self[i,false] = val
     end
-    alias_method :frame=, :[]=
 
     def each_frame
-      self.size.times do |i|
-	yield self[i]
+      frames.times do |i|
+	yield frame(i)
       end
     end
-    alias_method :each, :each_frame
-    include Enumerable
 
-    def resize!(newlen)
-      oldlen = size
-      if newlen > oldlen
-	old = @narray
-	@narray = NArray.new(old.typecode,newlen*@channels)
-	@narray[0...oldlen*@channels] = old
-      else
-	@narray = @narray[0...newlen*@channels]
+    # Return a Sound with the channels interleaved.
+    #   Sound[[0,1],[2,3]].interleaved #=> Sound[[0,2,1,3]]
+    def interleave
+      self.transpose(1,0).reshape!(self.size,1)
+    end
+    alias_method :interleaved, :interleave
+
+    # Fill this Sound's channels with deinterleaved data.
+    #   Sound[[0,0],[0,0]].interleaved = NArray[0,2,1,3] #=> Sound[[0,1],[2,3]]
+    def interleave=(o)
+      self[] = o2.reshape(channels,frames).transpose(1,0)
+    end
+    alias_method :interleaved=, :interleave=
+
+
+    # Creates a new Sound with the specified number of channels from the
+    # interleaved data in narray. narray should be evenly divisible by
+    # channels.
+    def self.deinterleave(narray,channels)
+      unless narray.size % channels == 0
+	raise ArgumentError, "narray not evenly divisible by channels"
       end
-      size
+      frames = narray.size/channels
+      s = Sound.new(narray.typecode,frames,channels)
+      s.interleaved = narray
+      s
     end
 
-    def self.byte(len, channels=1)
-      self.new(:byte,len,channels)
-    end
-    def self.sint(len, channels=1)
-      self.new(:sint,len,channels)
-    end
-    def self.int(len, channels=1)
-      self.new(:int,len,channels)
-    end
-    def self.sfloat(len, channels=1)
-      self.new(:sfloat,len,channels)
-    end
-    def self.float(len, channels=1)
-      self.new(:float,len,channels)
+    %w{byte sint int sfloat float}.each do |t|
+      eval "def self.#{t}(frames,channels=1); super(frames,channels); end"
     end
 
     # alias class methods
@@ -134,6 +89,10 @@ module Audio
       alias_method :long,   :int
       alias_method :double, :float
     end
-  end
 
+    # One of [:byte, :sint, :int, :sfloat, :float].
+    def type
+      [nil,:byte,:sint,:int,:sfloat,:float][typecode]
+    end
+  end
 end
