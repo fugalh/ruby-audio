@@ -132,8 +132,10 @@ class SndfileTest < Test::Unit::TestCase
   end
 
   def test_rubization
-    sf = Soundfile.open(TEST_WAV)
-    assert_instance_of Soundfile, sf
+    sf = Audio::Soundfile.open(TEST_WAV)
+    assert_instance_of Audio::Soundfile, sf
     assert sf.format_check
+    assert_equal Audio::Soundfile::SF_FORMAT_WAV, 0x010000
+    sf.close
   end
 end

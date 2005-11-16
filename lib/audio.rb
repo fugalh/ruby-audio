@@ -1,12 +1,10 @@
 require 'narray'
-# TODO: lots of testing, libsndfile, libsamplerate, portaudio
+# TODO: libsamplerate, portaudio
 module Audio
   
   # A Sound is a NArray with some audio convenience methods. It should always
   # have the shape (n,m) where n is the number of frames and m is the number of
   # channels. (Even when m=1)
-  #
-  #
   class Sound < NArray
     # The number of frames
     def frames

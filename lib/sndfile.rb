@@ -1,28 +1,43 @@
 require 'sndfile.so'
-require 'delegate'
 
-# The Sndfile module provides access to libsndfile. All functionality at
-# http://www.mega-nerd.com/libsndfile/api.html is provided as module methods.
-# SNDFILE is an opaque type, as it is in libsndfile. However, the
-# Sndfile::Soundfile class is provided to give a more object-oriented
-# interface.
-#
-# *Note*: sf_{read,write}* take an NArray instead of a buffer pointer and
-# length. The length is derived from the size of the NArray. The same holds
-# true for the Sndfile::Soundfile versions of these calls.
-module Sndfile
+module Audio
+  # libsndfile[http://www.mega-nerd.com/libsndfile/]
+  #
+  # = Synopsis
+  #   require 'sndfile'
+  #   require 'narray'
+  #
+  #   sf = Audio::Soundfile.open('chunky_bacon.wav')
+  #   na = NArray.float(sf.info.frames, sf.info.channels)
+  #   sf.read_float(na)
+  #   sf.close
+  #
+  # = Details
+  # Refer to the libsndfile api[http://www.mega-nerd.com/libsndfile/api.html].
+  #
+  # Usage is quite straightforward: drop the +sf_+ prefix, omit the
+  # <tt>SNDFILE*</tt> paramter, and use NArray or Numeric instead of (pointer,
+  # size) pairs. So, if you have a Soundfile object named +sf+, then
+  #   sf_read_float(SNDFILE, float *ptr, sf_count_t items) 
+  # becomes
+  #   buf = NArray.sfloat(items)
+  #   sf.read_float(buf)
+  # or
+  #   buf = sf.read_float(items)  # creates a new NArray
+  #
+  # 
+  # Exceptions to this pattern are documented below.
+  #
+  # Constants are accessed as Audio::Soundfile::SF_FORMAT_WAV
+  #
+  # TODO: s/NArray/Audio::Sound/
   class Soundfile
     # SF_INFO
     attr :info
 
-    # You probably want to use Soundfile.open
-    def initialize(sf, info)
-      @sf, @info = sf, info
-    end
-
-    # mode:: Element of %w{r w rw}
-    # info:: Instance of SF_INFO (if nil, it will create a new one)
-    def self.open(path, mode='r', info=nil)
+    # +mode+:: One of <tt>%w{r w rw}</tt>
+    # +info+:: Instance of SF_INFO (if nil, it will create a new one)
+    def initialize(path, mode='r', info=nil)
       if info.nil?
 	info = SF_INFO.new
       end
@@ -36,25 +51,36 @@ module Sndfile
       end
 
       sf = Sndfile.sf_open(path.to_s, mode, info)
-      self.new(sf,info)
+      @sf = sf
+      @info = info
+    end
+
+    class << self
+      alias_method :open, :new
     end
 
     # The following are equivalent: 
-    #   sound.format_check
-    #   Sndfile.sf_format_check(sound.info)
+    #   sf_format_check(info) /* C */
+    #   sf.format_check       # ruby
     def format_check
       Sndfile.sf_format_check(@info)
     end
 
-    # All the sf_* methods that take a SNDFILE* as the first argument are
-    # available with the sf_ prefix removed, and the SNDFILE* parameter
-    # omitted. For example, 
-    #   Sndfile.sf_perror(sf,...) 
-    # becomes 
-    #   sound.perror(...)
-    def method_missing(name, *args)
+    %w{short int float double}.each do |t|
+
+    end
+
+    def method_missing(name, *args) #:nodoc:
       begin
-	Sndfile.send "sf_"+name, @sf, *args
+	Sndfile.send "sf_#{name}".to_sym, @sf, *args
+      rescue NameError
+	super
+      end
+    end
+
+    def self.const_missing(sym) #:nodoc:
+      begin
+	Sndfile.const_get(sym)
       rescue NameError
 	super
       end
