@@ -15,3 +15,4 @@ require 'rake/testtask'
 Rake::TestTask.new do |t|
   t.libs += ['ext/sndfile']
 end
+task :test => [:sndfile]

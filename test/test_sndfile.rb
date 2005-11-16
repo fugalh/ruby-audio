@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'sndfile'
+require 'narray'
 
 class SndfileTest < Test::Unit::TestCase
   include Audio::Sndfile
@@ -87,6 +88,7 @@ class SndfileTest < Test::Unit::TestCase
   end
 
   def test_error
+    system 'rm -f bogus.wav'
     s = sf_open('bogus.wav',SFM_READ,SF_INFO.new)
     assert_nil s
     assert_equal SF_ERR_UNRECOGNISED_FORMAT, sf_error(nil)
@@ -104,9 +106,25 @@ class SndfileTest < Test::Unit::TestCase
   end
 
   def test_read
+    a = NArray.float(1000)
+    sf_read_double(@sf, a)
+    assert a.max > 0
   end
 
   def test_write
+    a = NArray.float(1000)
+    sf_read_double(@sf, a)
+    sf2 = nil
+    assert_nothing_raised do
+      sf2 = sf_open('bogus.wav',SFM_RDWR, @inf)
+      sf_write_double(sf2, a)
+    end
+    b = NArray.float(1000)
+    sf_seek(sf2, 0, SEEK_SET)
+    sf_read_double(sf2, b)
+    assert a == b
+    sf_close(sf2)
+    system 'rm -f bogus.wav'
   end
 
   def test_string
