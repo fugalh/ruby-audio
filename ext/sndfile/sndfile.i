@@ -1,5 +1,5 @@
 // TODO: sf_command,
-%module "audio::sndfile"
+%module "sndfile"
 %{
 #include "sndfile.h"
 #include "narray.h"

@@ -3,7 +3,7 @@ require 'sndfile'
 require 'narray'
 
 class SndfileTest < Test::Unit::TestCase
-  include Audio::Sndfile
+  include Sndfile
   TEST_WAV='test/what.wav'
 
   def setup
@@ -129,5 +129,11 @@ class SndfileTest < Test::Unit::TestCase
 
   def test_string
     assert_nil sf_get_string(@sf,SF_STR_COMMENT)
+  end
+
+  def test_rubization
+    sf = Soundfile.open(TEST_WAV)
+    assert_instance_of Soundfile, sf
+    assert sf.format_check
   end
 end
