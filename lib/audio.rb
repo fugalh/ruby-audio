@@ -1,11 +1,45 @@
 require 'narray'
+# This is all still in a state of flux
+#
 # TODO: libsamplerate, portaudio
 module Audio
   
   # A Sound is a NArray with some audio convenience methods. It should always
-  # have the shape (n,m) where n is the number of frames and m is the number of
-  # channels. (Even when m=1)
+  # have the shape <tt>[frames,channels]</tt>. (Even when m=1)
+  #
+  # *Notice* for NArray users: because most audio libraries do not agree with
+  # NArray on type names, Sound.float has a different meaning than
+  # NArray.float. Also, the shape of a new Sound is different than you might
+  # expect:
+  #   s = Sound.float(10)
+  #   n = NArray.float(10)
+  #   s.shape			#=> [10,1]
+  #   n.shape			#=> [10]
+  #   s.typecode		#=> 4
+  #   n.typecode		#=> 5
   class Sound < NArray
+
+    # Mapping from typecode to type symbols
+    TYPES = [nil,:char,:short,:long,:float,:double]
+
+    # typecode:: Same as NArray, or a member of TYPES
+    # frames::   Number of frames
+    # channels:: Number of channels
+    #
+    # Note that the resulting shape is always [frames,channels].
+    def self.new(typecode,frames,channels=1)
+      case typecode
+      when String, Symbol
+	typecode = TYPES.index(typecode.to_sym)
+      end
+      super(typecode,frames,channels)
+    end
+
+    # One of TYPES
+    def type
+      TYPES[typecode]
+    end
+
     # The number of frames
     def frames
       self.shape[0]
@@ -58,7 +92,8 @@ module Audio
     # Fill this Sound's channels with deinterleaved data.
     #   Sound[[0,0],[0,0]].interleaved = NArray[0,2,1,3] #=> Sound[[0,1],[2,3]]
     def interleave=(o)
-      self[] = o2.reshape(channels,frames).transpose(1,0)
+      self[] = o.reshape(channels,frames).transpose(1,0)
+      self
     end
     alias_method :interleaved=, :interleave=
 
@@ -76,21 +111,16 @@ module Audio
       s
     end
 
-    %w{byte sint int sfloat float}.each do |t|
-      eval "def self.#{t}(frames,channels=1); super(frames,channels); end"
+    %w{char short long float double}.each_with_index do |t,i|
+      eval "def self.#{t}(frames,channels=1); self.new(#{i+1},frames,channels); end"
     end
 
     # alias class methods
     class << self
-      alias_method :char,   :byte
-      alias_method :short,  :sint
-      alias_method :long,   :int
-      alias_method :double, :float
-    end
-
-    # One of [:byte, :sint, :int, :sfloat, :float].
-    def type
-      [nil,:byte,:sint,:int,:sfloat,:float][typecode]
+      alias_method :byte,   :char
+      alias_method :sint,   :short
+      alias_method :int,    :long
+      alias_method :sfloat, :float
     end
   end
 end

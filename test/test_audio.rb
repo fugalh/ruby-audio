@@ -4,7 +4,7 @@ require 'audio'
 class AudioTest < Test::Unit::TestCase
   include Audio
   def test_sound
-    %w{byte sint int sfloat float}.each do |t|
+    %w{char short long float double}.each do |t|
       eval "s = Sound.#{t}(10); assert_equal :#{t}, s.type"
     end
     s = Sound.float(6).indgen!
@@ -17,16 +17,16 @@ class AudioTest < Test::Unit::TestCase
     assert_equal [[0.0,3.0,1.0,4.0,2.0,5.0]], s.interleave.to_a
     assert_equal 6, s.size
 
-    s = Sound.char(10); assert_equal :byte, s.type
-    s = Sound.short(10); assert_equal :sint, s.type
-    s = Sound.long(10); assert_equal :int, s.type
-    s = Sound.double(10); assert_equal :float, s.type
+    s = Sound.byte(10); assert_equal :char, s.type
+    s = Sound.sint(10); assert_equal :short, s.type
+    s = Sound.int(10); assert_equal :long, s.type
+    s = Sound.sfloat(10); assert_equal :float, s.type
 
     s = Sound.sfloat(10)
     assert_equal 10, s.size
     assert_equal 10, s.frames
     assert_equal 1, s.channels
-    assert_equal :sfloat, s.type
+    assert_equal :float, s.type
     assert_kind_of NArray, s
     s.channels.times do |i|
       c = s.channel(i)
@@ -37,7 +37,6 @@ class AudioTest < Test::Unit::TestCase
 
     s = Sound.double(10,2)
     assert_equal 2, s.channels
-    assert_equal :float, s.type
     assert_equal 10, s.frames
 
     c = s.channel(1)
@@ -49,5 +48,35 @@ class AudioTest < Test::Unit::TestCase
       assert_kind_of Numeric, a[0]
       assert_kind_of Numeric, a[1]
     end
+
+    # test new
+    s = Sound.new(4,10)
+    assert_equal [10,1], s.shape
+    assert_equal 10, s.size
+    assert_equal 4, s.typecode
+    assert_equal :float, s.type
+    assert_equal 10, s.frames
+    assert_equal 1, s.channels
+
+    s = Sound.new(:long,10)
+    assert_equal [10,1], s.shape
+    assert_equal 10, s.size
+    assert_equal 3, s.typecode
+    assert_equal :long, s.type
+    assert_equal 10, s.frames
+    assert_equal 1, s.channels
+  end
+
+  def test_interleave
+    s = Sound.float(2,2).indgen!
+    i = s.interleave
+    assert_equal s[0,0], i[0]
+    assert_equal s[0,1], i[1]
+
+    s2 = Sound.deinterleave(i,2)
+    assert_equal s, s2
+
+    s2.interleave = i
+    assert_equal s, s2
   end
 end

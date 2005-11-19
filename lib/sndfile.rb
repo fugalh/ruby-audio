@@ -8,7 +8,7 @@ module Audio
   #   require 'narray'
   #
   #   sf = Audio::Soundfile.open('chunky_bacon.wav')
-  #   na = NArray.float(sf.info.frames, sf.info.channels)
+  #   na = Audio::Sound.float(sf.info.frames, sf.info.channels)
   #   sf.read_float(na)
   #   sf.close
   #
@@ -16,27 +16,26 @@ module Audio
   # Refer to the libsndfile api[http://www.mega-nerd.com/libsndfile/api.html].
   #
   # Usage is quite straightforward: drop the +sf_+ prefix, omit the
-  # <tt>SNDFILE*</tt> paramter, and use NArray or Numeric instead of (pointer,
-  # size) pairs. So, if you have a Soundfile object named +sf+, then
+  # <tt>SNDFILE*</tt> paramter, and use Sound or Numeric instead of
+  # (pointer, size) pairs. So, if you have a Soundfile object named +sf+, then
   #   sf_read_float(SNDFILE, float *ptr, sf_count_t items) 
   # becomes
-  #   buf = NArray.sfloat(items)
+  #   buf = Sound.float(items)
   #   sf.read_float(buf)
   # or
-  #   buf = sf.read_float(items)  # creates a new NArray
-  #
+  #   buf = sf.read_float(items)  # creates a new Sound
   # 
   # Exceptions to this pattern are documented below.
   #
-  # Constants are accessed as Audio::Soundfile::SF_FORMAT_WAV
+  # Constants are accessed as <tt>Soundfile::SF_FORMAT_WAV</tt>
   #
-  # TODO: s/NArray/Audio::Sound/
+  # TODO read/write functions with Sound objects.
   class Soundfile
     # SF_INFO
     attr :info
 
-    # +mode+:: One of <tt>%w{r w rw}</tt>
-    # +info+:: Instance of SF_INFO (if nil, it will create a new one)
+    # mode:: One of %w{r w rw}
+    # info:: Instance of SF_INFO or nil
     def initialize(path, mode='r', info=nil)
       if info.nil?
 	info = SF_INFO.new
@@ -53,6 +52,10 @@ module Audio
       sf = Sndfile.sf_open(path.to_s, mode, info)
       @sf = sf
       @info = info
+      if block_given?
+	yield self
+	self.close
+      end
     end
 
     class << self
@@ -66,9 +69,18 @@ module Audio
       Sndfile.sf_format_check(@info)
     end
 
-    %w{short int float double}.each do |t|
-
+    # Automagic read method. Type is autodetected.
+    def read(na)
+      sym = "read_#{Sound::TYPES[na.typecode]}".to_sym
+      self.send sym, na
     end
+
+    # Automagic write method. Type is autodetected.
+    def write(na)
+      sym = "write_#{Sound::TYPES[na.typecode]}".to_sym
+      self.send sym, na
+    end
+
 
     def method_missing(name, *args) #:nodoc:
       begin

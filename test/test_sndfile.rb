@@ -137,5 +137,13 @@ class SndfileTest < Test::Unit::TestCase
     assert sf.format_check
     assert_equal Audio::Soundfile::SF_FORMAT_WAV, 0x010000
     sf.close
+
+    Audio::Soundfile.open(TEST_WAV) do |sf|
+      a = NArray.sfloat(100)
+      n = sf.read_float(a)
+      assert n <= a.size
+      n = sf.read(a)
+      assert n <= a.size
+    end
   end
 end
