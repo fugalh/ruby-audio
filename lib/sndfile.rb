@@ -62,23 +62,23 @@ module Audio
       alias_method :open, :new
     end
 
-    def frames=(o)
-      @info.frames=(o)
+    def frames=(v)
+      @info.frames=(v)
     end
-    def samplerate=(o)
-      @info.samplerate=(o)
+    def samplerate=(v)
+      @info.samplerate=(v)
     end
-    def channels=(o)
-      @info.channels=(o)
+    def channels=(v)
+      @info.channels=(v)
     end
-    def format=(o)
-      @info.format=(o)
+    def format=(v)
+      @info.format=(v)
     end
-    def sections=(o)
-      @info.sections=(o)
+    def sections=(v)
+      @info.sections=(v)
     end
-    def seekable=(o)
-      @info.seekable=(o)
+    def seekable=(v)
+      @info.seekable=(v)
     end
     def frames
       @info.frames
