@@ -110,6 +110,12 @@ module Audio
       s.interleaved = narray
       s
     end
+    def deinterleave(channels)
+      self.class.deinterleave(self,channels)
+    end
+    def deinterleave!(channels)
+      self[] = deinterleave(channels)
+    end
 
     %w{char short long float double}.each_with_index do |t,i|
       eval "def self.#{t}(frames,channels=1); self.new(#{i+1},frames,channels); end"

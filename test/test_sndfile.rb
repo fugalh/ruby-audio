@@ -139,9 +139,11 @@ class SndfileTest < Test::Unit::TestCase
     sf.close
 
     Audio::Soundfile.open(TEST_WAV) do |sf|
-      a = NArray.sfloat(100)
-      n = sf.read_float(a)
-      assert n <= a.size
+      a = sf.read_float(100)
+      assert_instance_of Sound, a
+      assert a.size <= 100
+      assert_equal sf.channels, a.channels
+
       n = sf.read(a)
       assert n <= a.size
     end

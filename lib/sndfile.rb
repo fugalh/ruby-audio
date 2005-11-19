@@ -8,7 +8,7 @@ module Audio
   #   require 'narray'
   #
   #   sf = Audio::Soundfile.open('chunky_bacon.wav')
-  #   na = Audio::Sound.float(sf.info.frames, sf.info.channels)
+  #   na = Audio::Sound.float(sf.frames, sf.channels)
   #   sf.read_float(na)
   #   sf.close
   #
@@ -28,11 +28,10 @@ module Audio
   # Exceptions to this pattern are documented below.
   #
   # Constants are accessed as <tt>Soundfile::SF_FORMAT_WAV</tt>
-  #
-  # TODO read/write functions with Sound objects.
   class Soundfile
     # SF_INFO
     attr :info
+    attr_reader :mode
 
     # mode:: One of %w{r w rw}
     # info:: Instance of SF_INFO or nil
@@ -41,8 +40,8 @@ module Audio
 	info = SF_INFO.new
       end
       
+      modes = {:r => SFM_READ, :w => SFM_WRITE, :rw => SFM_RDWR}
       unless Numeric === mode
-	modes = {:r => SFM_READ, :w => SFM_WRITE, :rw => SFM_RDWR}
 	mode = modes[mode.to_sym]
       end
       unless [SFM_READ, SFM_WRITE, SFM_RDWR].include? mode
@@ -52,6 +51,7 @@ module Audio
       sf = Sndfile.sf_open(path.to_s, mode, info)
       @sf = sf
       @info = info
+      @mode = modes.invert[mode]
       if block_given?
 	yield self
 	self.close
@@ -60,6 +60,43 @@ module Audio
 
     class << self
       alias_method :open, :new
+    end
+
+    def frames=(o)
+      @info.frames=(o)
+    end
+    def samplerate=(o)
+      @info.samplerate=(o)
+    end
+    def channels=(o)
+      @info.channels=(o)
+    end
+    def format=(o)
+      @info.format=(o)
+    end
+    def sections=(o)
+      @info.sections=(o)
+    end
+    def seekable=(o)
+      @info.seekable=(o)
+    end
+    def frames
+      @info.frames
+    end
+    def samplerate
+      @info.samplerate
+    end
+    def channels
+      @info.channels
+    end
+    def format
+      @info.format
+    end
+    def sections
+      @info.sections
+    end
+    def seekable
+      @info.seekable
     end
 
     # The following are equivalent: 
@@ -81,6 +118,35 @@ module Audio
       self.send sym, na
     end
 
+    %w{read readf}.each do |r|
+      %w{short int float double}.each do |t|
+	tc = Audio::Sound::TYPES.index(t.to_sym)
+	c = ', channels' if r == 'readf'
+	cmd = "#{r}_#{t}"
+	eval <<-EOF
+	  def #{cmd}(arg)
+	    na = NArray.new(#{tc}, arg#{c})
+	    n = Sndfile.sf_#{cmd}(@sf, na)
+	    Sound.deinterleave(na, channels)
+	  else
+	    n = Sndfile.sf_#{cmd}(@sf, na)
+	    na.deinterleave!
+	    n
+	  end
+	EOF
+      end
+    end
+
+    %w{write writef}.each do |w|
+      %w{short int float double}.each do |t|
+	cmd = "#{w}_#{t}"
+	eval <<-EOF
+	  def #{cmd}(sound)
+	    Sndfile.sf_#{cmd}(sound.interleave)
+	  end
+	EOF
+      end
+    end
 
     def method_missing(name, *args) #:nodoc:
       begin
