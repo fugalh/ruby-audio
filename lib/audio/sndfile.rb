@@ -130,6 +130,7 @@ module Audio
 	cmd = "#{w}_#{t}"
 	eval <<-EOF
 	  def #{cmd}(sound)
+	    raise "Format check failed: #{perror}" unless format_check
 	    Sndfile.sf_#{cmd}(sound.interleave)
 	  end
 	EOF
