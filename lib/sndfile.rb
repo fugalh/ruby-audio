@@ -106,32 +106,37 @@ module Audio
       Sndfile.sf_format_check(@info)
     end
 
+    TYPES = [nil,:char,:short,:int,:float,:double] #:nodoc:
+
     # Automagic read method. Type is autodetected.
     def read(na)
-      sym = "read_#{Sound::TYPES[na.typecode]}".to_sym
+      sym = "read_#{TYPES[na.typecode]}".to_sym
       self.send sym, na
     end
 
     # Automagic write method. Type is autodetected.
     def write(na)
-      sym = "write_#{Sound::TYPES[na.typecode]}".to_sym
+      sym = "write_#{TYPES[na.typecode]}".to_sym
       self.send sym, na
     end
 
     %w{read readf}.each do |r|
       %w{short int float double}.each do |t|
-	tc = Audio::Sound::TYPES.index(t.to_sym)
+	tc = TYPES.index(t.to_sym)
 	c = ', channels' if r == 'readf'
 	cmd = "#{r}_#{t}"
 	eval <<-EOF
 	  def #{cmd}(arg)
-	    na = NArray.new(#{tc}, arg#{c})
-	    n = Sndfile.sf_#{cmd}(@sf, na)
-	    Sound.deinterleave(na, channels)
-	  else
-	    n = Sndfile.sf_#{cmd}(@sf, na)
-	    na.deinterleave!
-	    n
+	    if Numeric === arg
+	      na = NArray.new(#{tc}, arg#{c})
+	      n = Sndfile.sf_#{cmd}(@sf, na)
+	      Sound.deinterleave(na, channels)
+	    else
+	      na = arg
+	      n = Sndfile.sf_#{cmd}(@sf, na)
+	      na.deinterleave!(channels)
+	      n
+	    end
 	  end
 	EOF
       end
