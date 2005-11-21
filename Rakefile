@@ -18,6 +18,16 @@ task :setup => ['.config'] do
   sh 'ruby setup.rb setup'
 end
 
+desc 'clean up'
+task :clean do
+  sh 'ruby setup.rb clean'
+  sh 'rm -rf doc'
+end
+
+task :dist do
+  sh 'darcs dist -d ruby-audio-`cat VERSION`'
+end
+
 require 'rake/testtask'
 Rake::TestTask.new do |t|
   t.libs += ['ext/sndfile']
