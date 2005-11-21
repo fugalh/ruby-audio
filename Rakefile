@@ -1,22 +1,27 @@
+task :default => [:test, :doc]
+
+task :install => [:setup] do
+  sh 'ruby setup.rb install'
+end
+
+
 desc "RDoc documentation"
 task :doc do
-  sh 'rdoc -t "ruby-audio" -m Audio lib'
+  sh 'rdoc -t "ruby-audio" -m README README lib'
 end
 
-file 'ext/sndfile/sndfile_wrap.c' => ['ext/sndfile/sndfile.i'] do
-  sh 'cd ext/sndfile; swig -ruby sndfile.i'
+file '.config' do
+  sh 'ruby setup.rb config'
 end
 
-task :sndfile => ['ext/sndfile/sndfile_wrap.c', 'ext/sndfile/Makefile'] do
-  sh 'make -C ext/sndfile'
-end
-
-file 'ext/sndfile/Makefile' => ['ext/sndfile/extconf.rb'] do |t|
-  sh "ruby -C ext/sndfile extconf.rb"
+task :setup => ['.config'] do
+  sh 'ruby setup.rb setup'
 end
 
 require 'rake/testtask'
 Rake::TestTask.new do |t|
   t.libs += ['ext/sndfile']
 end
-task :test => [:sndfile]
+task :test => [:setup]
+
+# vim: filetype=ruby

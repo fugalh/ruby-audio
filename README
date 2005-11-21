@@ -1,0 +1,56 @@
+= ruby/audio
+
+This module and its classes are provided for the purpose of aiding in the
+manipulation of audio data. The core is the Audio::Sound class, which is a
+subclass of NArray. Also provided is the Audio::Soundfile class, which is a
+wrapper around the wonderful libsndfile. 
+
+== About This Release
+
+This is the initial release of ruby/audio. The API can be considered relatively
+stable, barring the discovery of fundamental design flaws. More methods may be
+added, but backwards compatibility will be strived for. However, if you rely on
+the existing API and would like to ensure compatibility, drop me a line. If I
+know people are using it, I will be more careful not to break things. 
+
+*Please* send me feedback if you find a bug, find the API awkward, or just
+like/hate it.
+
+Next on my list is to wrap libsamplerate, adapt
+ladspar[http://rubyforge.org/projects/ladspar] to use Audio::Sound, and perhaps
+wrap portaudio.
+
+== Installation
+
+=== Prerequisites
+
+- NArray[http://www.ir.isas.ac.jp/~masa/ruby/index-e.html]
+- libsndfile[http://www.mega-nerd.com/libsndfile/]
+- SWIG[http://www.swig.org/]
+- Rake[http://rake.rubyforge.org/]
+
+=== Building
+
+  rake
+
+=== Installing
+
+  rake install
+
+== License
+
+Copyright (C) 2005  Hans Fugal
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA

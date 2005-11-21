@@ -73,6 +73,16 @@ $1 = NA_PTR_TYPE($input, $1_type);
 $2 = NA_TOTAL($input);
 }
 
+%typemap(in) (void *data, int datasize), (void *ptr, sf_count_t), 
+    (const void *ptr, sf_count_t)
+{
+if (!NA_IsNArray($input))
+    rb_raise(rb_eArgError, "Expected NArray");
+$1 = NA_STRUCT($input)->ptr;
+$2 = NA_TOTAL($input) * na_sizeof[NA_TYPE($input)];
+}
+
+
 // sf_perror and sf_error_str are deprecated. sf_error_str probably doesn't
 // work at all.
 

@@ -1,10 +1,11 @@
+require 'audio'
 require 'sndfile.so'
 
 module Audio
   # libsndfile[http://www.mega-nerd.com/libsndfile/]
   #
   # = Synopsis
-  #   require 'sndfile'
+  #   require 'audio/sndfile'
   #   require 'narray'
   #
   #   sf = Audio::Soundfile.open('chunky_bacon.wav')

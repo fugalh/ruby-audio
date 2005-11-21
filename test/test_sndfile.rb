@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'sndfile'
+require 'audio/sndfile'
 require 'narray'
 
 class SndfileTest < Test::Unit::TestCase

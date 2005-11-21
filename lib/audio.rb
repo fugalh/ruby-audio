@@ -1,6 +1,5 @@
 require 'narray'
-# This is all still in a state of flux
-#
+
 # TODO: libsamplerate, portaudio
 module Audio
   
