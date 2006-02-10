@@ -6,12 +6,11 @@ module Audio
   #
   # = Synopsis
   #   require 'audio/sndfile'
-  #   require 'narray'
-  #
-  #   sf = Audio::Soundfile.open('chunky_bacon.wav')
-  #   na = Audio::Sound.float(sf.frames, sf.channels)
-  #   sf.read_float(na)
-  #   sf.close
+  #   
+  #   Audio::Soundfile.open('chunky_bacon.wav') do |sf|
+  #     sound = sf.readf_float(sf.frames)
+  #     puts "Maximum amplitude: #{sound.abs.max}"
+  #   end
   #
   # = Details
   # Refer to the libsndfile api[http://www.mega-nerd.com/libsndfile/api.html].
