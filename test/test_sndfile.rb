@@ -88,7 +88,7 @@ class SndfileTest < Test::Unit::TestCase
   end
 
   def test_error
-    system 'rm -f bogus.wav'
+    File.delete('bogus.wav') if File.exist?('bogus.wav')
     s = sf_open('bogus.wav',SFM_READ,SF_INFO.new)
     assert_nil s
     assert_equal SF_ERR_UNRECOGNISED_FORMAT, sf_error(nil)
@@ -123,7 +123,7 @@ class SndfileTest < Test::Unit::TestCase
     sf_read_double(sf2, b)
     assert a == b
     sf_close(sf2)
-    system 'rm -f bogus.wav'
+    File.delete('bogus.wav') if File.exist?('bogus.wav')
   end
 
   def test_string
