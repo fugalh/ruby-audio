@@ -7,7 +7,7 @@ end
 
 desc "RDoc documentation"
 task :doc do
-  sh 'rdoc -t "ruby-audio" -m README README lib'
+  sh 'rdoc -T extras/flipbook_rdoc.rb -t "ruby-audio" -m README README lib'
 end
 
 file '.config' do
