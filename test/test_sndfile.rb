@@ -7,6 +7,7 @@ class SndfileTest < Test::Unit::TestCase
   TEST_WAV='test/what.wav'
 
   def setup
+    raise "Invalid test wav" unless File.readable?(TEST_WAV)
     @inf = SF_INFO.new
     @sf = sf_open(TEST_WAV,SFM_RDWR,@inf)
     raise "Couldn't open #{TEST_WAV}: #{sf_strerror(@sf)}" if @sf.nil?
@@ -91,7 +92,7 @@ class SndfileTest < Test::Unit::TestCase
     File.delete('bogus.wav') if File.exist?('bogus.wav')
     s = sf_open('bogus.wav',SFM_READ,SF_INFO.new)
     assert_nil s
-    assert_equal SF_ERR_UNRECOGNISED_FORMAT, sf_error(nil)
+    assert_equal SF_ERR_SYSTEM, sf_error(nil)
     sf_close(s)
     assert_equal SF_ERR_NO_ERROR, sf_error(@sf)
     assert_equal 'No Error.', sf_strerror(@sf)
