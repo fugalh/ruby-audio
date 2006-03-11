@@ -92,7 +92,10 @@ class SndfileTest < Test::Unit::TestCase
     File.delete('bogus.wav') if File.exist?('bogus.wav')
     s = sf_open('bogus.wav',SFM_READ,SF_INFO.new)
     assert_nil s
-    assert_equal SF_ERR_SYSTEM, sf_error(nil)
+    # on some systems (or versions?) libsndfile gives either
+    # SF_ERR_UNRECOGNIZED_FORMAT or SF_ERR_SYSTEM, so we just check that there
+    # was _some_ error.
+    assert_not_equal SF_ERR_NO_ERROR, sf_error(nil)
     sf_close(s)
     assert_equal SF_ERR_NO_ERROR, sf_error(@sf)
     assert_equal 'No Error.', sf_strerror(@sf)

@@ -99,7 +99,7 @@ module Audio
     # Automagic write method. Type is autodetected.
     def write(na)
       sym = "write_#{TYPES[na.typecode]}".to_sym
-      self.send sym, na
+      self.send sym, na, na.size
     end
 
     %w{read readf}.each do |r|
@@ -130,7 +130,7 @@ module Audio
 	eval <<-EOF
 	  def #{cmd}(sound)
 	    raise "Format check failed: \#{perror}" unless format_check
-	    Sndfile.sf_#{cmd}(sound.interleave)
+	    Sndfile.sf_#{cmd}(@sf, sound.interleave)
 	  end
 	EOF
       end
