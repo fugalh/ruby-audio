@@ -1,8 +1,8 @@
 // TODO: sf_command,
 %module "sndfile"
 %{
-#include "sndfile.h"
-#include "narray.h"
+#include <sndfile.h>
+#include <narray.h>
 %}
 
 // this bit brought to you by stdio.h
