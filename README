@@ -7,11 +7,12 @@ wrapper around the wonderful libsndfile.
 
 == About This Release
 
-This is the initial release of ruby/audio. The API can be considered relatively
-stable, barring the discovery of fundamental design flaws. More methods may be
-added, but backwards compatibility will be strived for. However, if you rely on
-the existing API and would like to ensure compatibility, drop me a line. If I
-know people are using it, I will be more careful not to break things. 
+This is the a bugfix release of the initial release of ruby/audio. The API can
+be considered relatively stable, barring the discovery of fundamental design
+flaws. More methods may be added, but backwards compatibility will be strived
+for. However, if you rely on the existing API and would like to ensure
+compatibility, drop me a line. If I know people are using it, I will be more
+careful not to break things. 
 
 *Please* send me feedback if you find a bug, find the API awkward, or just
 like/hate it.
