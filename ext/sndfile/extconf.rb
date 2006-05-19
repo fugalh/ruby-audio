@@ -1,5 +1,5 @@
 require 'mkmf'
-system 'swig -ruby sndfile.i'
+system 'swig -ruby -I/usr/include -I/usr/local/include sndfile.i'
 unless find_library 'sndfile', 'sf_open'
   error 'You need to install libsndfile'
   exit
