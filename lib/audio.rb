@@ -113,7 +113,9 @@ module Audio
       self.class.deinterleave(self,channels)
     end
     def deinterleave!(channels)
-      self[] = deinterleave(channels)
+      s = deinterleave(channels)
+      reshape!(*s.shape)
+      self[] = s
     end
 
     %w{char short long float double}.each_with_index do |t,i|

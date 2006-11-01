@@ -5,6 +5,7 @@ require 'narray'
 class SndfileTest < Test::Unit::TestCase
   include Sndfile
   TEST_WAV='test/what.wav'
+  STEREO_TEST_WAV='test/what2.wav'
 
   def setup
     raise "Invalid test wav" unless File.readable?(TEST_WAV)
@@ -146,6 +147,16 @@ class SndfileTest < Test::Unit::TestCase
       assert_instance_of Audio::Sound, a
       assert_equal :float, a.type
       assert_equal 4, a.typecode
+      assert a.size <= 100
+      assert_equal sf.channels, a.channels
+
+      n = sf.read_float(a)
+      assert n <= a.size
+      n = sf.read(a)
+      assert n <= a.size
+    end
+    Audio::Soundfile.open(STEREO_TEST_WAV) do |sf|
+      a = sf.read_float(100)
       assert a.size <= 100
       assert_equal sf.channels, a.channels
 
