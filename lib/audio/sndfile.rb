@@ -16,7 +16,7 @@ module Audio
   # Refer to the libsndfile api[http://www.mega-nerd.com/libsndfile/api.html].
   #
   # Usage is quite straightforward: drop the +sf_+ prefix, omit the
-  # <tt>SNDFILE*</tt> paramter, and use Sound or Numeric instead of
+  # <tt>SNDFILE*</tt> parameter, and use Sound or Numeric instead of
   # (pointer, size) pairs. So, if you have a Soundfile object named +sf+, then
   #   sf_read_float(SNDFILE, float *ptr, sf_count_t items) 
   # becomes
