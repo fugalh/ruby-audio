@@ -23,6 +23,9 @@ wrap portaudio.
 
 == Installation
 
+=== Download
+http://github.com/fugalh/ruby-audio
+
 === Prerequisites
 
 - NArray[http://www.ir.isas.ac.jp/~masa/ruby/index-e.html]
